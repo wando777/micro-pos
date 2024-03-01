@@ -1,6 +1,8 @@
 package com.store.auth.controller;
 
+import com.store.auth.service.CompanyService;
 import com.store.auth.service.GenericService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +14,7 @@ import java.util.List;
 public class GenericController<T> {
     private final GenericService<T> service;
 
-    @GetMapping
+	@GetMapping
     public ResponseEntity<List<T>> getAll(){
         List<T> items = service.getAll();
         return new ResponseEntity<>(items, HttpStatus.OK);
