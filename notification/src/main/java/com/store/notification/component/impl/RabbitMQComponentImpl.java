@@ -29,6 +29,8 @@ public class RabbitMQComponentImpl  implements RabbitMQComponent {
         Map<String, Object> obj = emailServiceImpl.convertToObject(message);
 
         int user_id = (int) obj.get("user_id");
+        
+        // TODO: pegar o nome do produto do microservice de Product via http
         String product_name = (String) obj.get("product_name");
 
         String response = this.webClient.get()
