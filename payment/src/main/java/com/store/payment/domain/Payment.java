@@ -22,15 +22,14 @@ public class Payment {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-//	@Column(nullable = false)
-//	private String name;
-//
-//	@Column(nullable = false)
-//	private Float price;
-//
-//	@Column(nullable = false)
-//	private String category;
+	@Column(nullable = false)
+	private Integer installments;
+	
+	@Column(nullable = false)
+	private String paymentSystem;
 
-//	@Column(nullable = false)
-//	private boolean isActive;
+	@Column(nullable = false)
+	private Float paymentValue;
+
+	//TODO: criar um objeto para armazenar os dados do pagamento. Em caso de cartão, vincular a uma conta cartão linkada a um usuário.
 }
