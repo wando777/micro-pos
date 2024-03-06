@@ -8,41 +8,60 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Component
-public class RabbitMQComponentImpl  implements RabbitMQComponent {
-    @Value("${rabbitmq.queue.name}")
-    private String queue;
+public class RabbitMQComponentImpl implements RabbitMQComponent {
+	@Value("${rabbitmq.queue.name}")
+	private String queue;
 
-    @Autowired
-    private EmailServiceImpl emailServiceImpl;
+	@Autowired
+	private EmailServiceImpl emailServiceImpl;
 
-    private final WebClient webClient;
+	private final WebClient webClient;
 
-    public RabbitMQComponentImpl(WebClient webClient) {
-        this.webClient = webClient;
-    }
+	private final WebClient webClientProduct = WebClient.create("http://localhost:8087/api");
 
-    @RabbitListener(queues = "order_notification")
-    public void handleMessage(String message){
-        Map<String, Object> obj = emailServiceImpl.convertToObject(message);
+	public RabbitMQComponentImpl(WebClient webClient) {
+		this.webClient = webClient;
+	}
 
-        int user_id = (int) obj.get("user_id");
-        
-        // TODO: pegar o nome do produto do microservice de Product via http
-        String product_name = (String) obj.get("product_name");
+	@RabbitListener(queues = "order_notification")
+	public void handleMessage(String message) {
+		Map<String, Object> obj = emailServiceImpl.convertToObject(message);
 
-        String response = this.webClient.get()
-                .uri("/user/" + String.valueOf(user_id))
-                        .retrieve()
-                        .bodyToMono(String.class)
-                        .block();
+		int user_id = (int) obj.get("user_id");
+		List<Map<String, Object>> orderItems = (List<Map<String, Object>>) obj.get("orderItems");
 
-        Map<String, Object> user = emailServiceImpl.convertToObject(response);
+		// TODO: pegar todos os product_ids do carrinho e adicionar em uma lista para
+		// então buscar o nome de cada um. Nesse exemplo usarei apenas 1 product_id
+		// sendo o primeiro do array apenas para ilustrar funcionamento
+		List<Integer> productIds = new ArrayList<>();
+		for (Map<String, Object> orderItem : orderItems) {
+			int productId = (int) orderItem.get("product_id");
+			productIds.add(productId);
+		}
 
-        String content = emailServiceImpl.constructOrderContent(product_name, (String) user.get("username"));
+		// TODO: pegar o produto do microservice de Product via http
+		String productData = retrieveProduct(productIds.get(0));
 
-        emailServiceImpl.sendEmail(content, (String) user.get("email"), "Notificação XPTO");
-    }
+		String response = this.webClient.get().uri("/user/" + String.valueOf(user_id)).retrieve()
+				.bodyToMono(String.class).block();
+
+		Map<String, Object> user = emailServiceImpl.convertToObject(response);
+		Map<String, Object> product = emailServiceImpl.convertToObject(productData);
+
+		String content = emailServiceImpl.constructOrderContent((String) product.get("name"),
+				(String) user.get("username"));
+
+		emailServiceImpl.sendEmail(content, (String) user.get("email"), "Notificação XPTO");
+	}
+
+	private String retrieveProduct(int product_id) {
+		String response = webClientProduct.get().uri("/product/" + String.valueOf(product_id)).retrieve()
+				.bodyToMono(String.class).block();
+		return response;
+	}
 }

@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 @Service
@@ -41,6 +42,7 @@ public class OrderServiceImpl extends GenericServiceImpl<Order, Long, OrderRepos
 
 	@Override
 	public void save(Order order) {
+		// Busca dados do usuário que fez a compra e faz a notificação do pedido fechado
 		this.webClient.get().uri("/user/" + String.valueOf(order.getUser_id())).accept(MediaType.APPLICATION_JSON)
 				.exchangeToMono(response -> {
 					if (response.statusCode().equals(HttpStatus.OK)) {
@@ -63,6 +65,15 @@ public class OrderServiceImpl extends GenericServiceImpl<Order, Long, OrderRepos
 						return response.createError();
 					}
 				}).block();
+		// Chama o serviço de pagamento via http e notifica o usuário que o pagamento
+		// foi realizado
+		String jsonBody = "{\"paymentSystem\": \"Visa\", \"installments\": 1, \"paymentValue\": 77.77}";
+
+		WebClient webClientPayment = WebClient.create("http://localhost:8089/api");
+
+		webClientPayment.post().uri("/payment").contentType(MediaType.APPLICATION_JSON)
+				.body(BodyInserters.fromValue(jsonBody)).retrieve().bodyToMono(String.class)
+				.subscribe(response -> System.out.println("Resposta: " + response));
 	}
 
 	public void sendNotification(Order order) {
