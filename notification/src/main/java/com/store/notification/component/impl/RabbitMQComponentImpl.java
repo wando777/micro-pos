@@ -59,6 +59,18 @@ public class RabbitMQComponentImpl implements RabbitMQComponent {
 		emailServiceImpl.sendEmail(content, (String) user.get("email"), "Notificação XPTO");
 	}
 
+	@RabbitListener(queues = "payment_notification")
+	public void handlePaymentMessages(String message) {
+		Map<String, Object> obj = emailServiceImpl.convertToObject(message);
+		Integer paymentId = (Integer) obj.get("id");
+
+		// TODO: pegar o nome do user no pagamento (criar no microsserviço de payment).
+
+		String content = emailServiceImpl.constructPaymentContent("Fulaninho", paymentId);
+
+		emailServiceImpl.sendEmail(content, "wanderson.leite@al.infnet.edu.br", "Notificação de Payment");
+	}
+
 	private String retrieveProduct(int product_id) {
 		String response = webClientProduct.get().uri("/product/" + String.valueOf(product_id)).retrieve()
 				.bodyToMono(String.class).block();

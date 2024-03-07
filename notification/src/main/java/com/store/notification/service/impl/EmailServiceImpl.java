@@ -14,47 +14,47 @@ import java.text.MessageFormat;
 import java.util.Map;
 
 @Service
-public class EmailServiceImpl extends GenericServiceImpl{
-    @Autowired
-    private JavaMailSender mailSender;
+public class EmailServiceImpl extends GenericServiceImpl {
+	@Autowired
+	private JavaMailSender mailSender;
 
-    @Value("${spring.mail.username}")
-    private String mailFrom;
+	@Value("${spring.mail.username}")
+	private String mailFrom;
 
-    public Map<String, Object> convertToObject(String jsonS){
-        try{
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> map = mapper.readValue(jsonS, Map.class);
-            return map;
-        }catch(JsonProcessingException e){
-            return null;
-        }
-    }
+	public Map<String, Object> convertToObject(String jsonS) {
+		try {
+			ObjectMapper mapper = new ObjectMapper();
+			Map<String, Object> map = mapper.readValue(jsonS, Map.class);
+			return map;
+		} catch (JsonProcessingException e) {
+			return null;
+		}
+	}
 
-    public String constructOrderContent(String product_name, String username){
-        return MessageFormat.format("<html><body><h1>Olá {0}</h1><p>Vocë acaba de comprar o produto {1}<p></body></html>", username, product_name);
-    }
+	public String constructOrderContent(String product_name, String username) {
+		return MessageFormat.format(
+				"<html><body><h1>Olá {0}</h1><p>Vocë acaba de comprar o produto {1}<p></body></html>", username,
+				product_name);
+	}
 
-    public void sendEmail(String content, String email, String subject){
-//        SimpleMailMessage message = new SimpleMailMessage();
-//        message.setFrom(this.mailFrom);
-//        message.setTo(email);
-//        message.setSubject(subject);
-//        message.setText(content);
-//
-//
-        try{
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+	public String constructPaymentContent(String username, Integer paymentId) {
+		return MessageFormat.format("<html><body><h1>Olá {0}</h1><p>, seu pagamento {1} foi aprovado!<p></body></html>",
+				username, paymentId);
+	}
 
-            helper.setFrom(this.mailFrom);
-            helper.setTo(email);
-            helper.setSubject(subject);
-            helper.setText(content, true);
+	public void sendEmail(String content, String email, String subject) {
+		try {
+			MimeMessage message = mailSender.createMimeMessage();
+			MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-            this.mailSender.send(message);
-        }catch (MessagingException e){
-            System.out.println(e);
-        }
-    }
+			helper.setFrom(this.mailFrom);
+			helper.setTo(email);
+			helper.setSubject(subject);
+			helper.setText(content, true);
+
+			this.mailSender.send(message);
+		} catch (MessagingException e) {
+			System.out.println(e);
+		}
+	}
 }

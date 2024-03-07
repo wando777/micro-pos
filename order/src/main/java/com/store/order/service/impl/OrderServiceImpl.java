@@ -34,6 +34,8 @@ public class OrderServiceImpl extends GenericServiceImpl<Order, Long, OrderRepos
 
 	private final AmqpTemplate rabbitTemplate;
 
+	private final WebClient webClientPayment = WebClient.create("http://localhost:8089/api");
+
 	public OrderServiceImpl(OrderRepository repository, WebClient webClient, AmqpTemplate rabbitTemplate) {
 		super(repository);
 		this.webClient = webClient;
@@ -69,11 +71,11 @@ public class OrderServiceImpl extends GenericServiceImpl<Order, Long, OrderRepos
 		// foi realizado
 		String jsonBody = "{\"paymentSystem\": \"Visa\", \"installments\": 1, \"paymentValue\": 77.77}";
 
-		WebClient webClientPayment = WebClient.create("http://localhost:8089/api");
-
-		webClientPayment.post().uri("/payment").contentType(MediaType.APPLICATION_JSON)
+		this.webClientPayment.post().uri("/payment").contentType(MediaType.APPLICATION_JSON)
 				.body(BodyInserters.fromValue(jsonBody)).retrieve().bodyToMono(String.class)
 				.subscribe(response -> System.out.println("Resposta: " + response));
+
+		// TODO: colocar uma referência no pedido para o pagamento.
 	}
 
 	public void sendNotification(Order order) {
